@@ -14,6 +14,3 @@
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::get('/products', 'Api\ProductController@getProducts');
-Route::post('/orders', 'Api\OrderController@createOrder');

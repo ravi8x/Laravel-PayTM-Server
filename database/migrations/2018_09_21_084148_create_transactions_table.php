@@ -13,8 +13,12 @@ class CreateTransactionsTable extends Migration
      */
     public function up()
     {
+        // raw_data - contains the dump of PayTM transaction response
         Schema::create('transactions', function (Blueprint $table) {
             $table->increments('id');
+            $table->string('transaction_id');
+            $table->string('status');
+            $table->string('raw_data');
             $table->timestamps();
         });
     }

@@ -36,4 +36,16 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    'paytm-wallet' => [
+        'env' => 'local', // values : (local | production)
+        'merchant_id' => 'Androi78288874845632',
+        'merchant_key' => '0Q8Z4v@a6POCVsd7',
+        'merchant_website' => 'APPSTAGING',
+        'channel' => 'WAP',
+        'industry_type' => 'Retail',
+    ],
+
+    // Androi78288874845632 | 0Q8Z4v@a6POCVsd7
+    // SxxGda21141640109716 | T5k09vacfMNU&50g
+
 ];
