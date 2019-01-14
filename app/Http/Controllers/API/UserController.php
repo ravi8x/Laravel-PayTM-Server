@@ -52,6 +52,7 @@ class UserController extends Controller
     public function prepareUser($user, $token)
     { 
         $response = array();
+        $response['id'] = $user->id;
         $response['name'] = $user->name;
         $response['email'] = $user->email;
         $response['token'] = $token;

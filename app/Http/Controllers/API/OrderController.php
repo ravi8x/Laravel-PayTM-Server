@@ -18,6 +18,11 @@ require_once app_path() . '/Library/PaytmKit/lib/encdec_paytm.php';
 class OrderController extends Controller
 {
 
+    /**
+    Preparing new order
+    Always Creates or fetches the order with status `NEW`
+    return orderId and order Items
+    */
     public function prepareOrder(Request $request){
         $input = $request->all();
         $bodyContent = json_decode($request->getContent());
@@ -34,7 +39,21 @@ class OrderController extends Controller
             $res = array();
             $res['order_id'] = $order->order_id;
             $res['status'] = $order->status;
-            $res['order_items'] = $orderItems;
+            $res['amount'] = $this->getOrderTotal($order->order_id);
+
+            $items = [];
+            foreach ($orderItems as $orderItem) {
+                $tmp = [];
+                $tmp['quantity'] = $orderItem['quantity'];
+                $tmp['amount'] = $orderItem['amount'];
+                $tmp['product']['id'] = $orderItem['product']['id'];
+                $tmp['product']['name'] = $orderItem['product']['name'];
+                $tmp['product']['price'] = $orderItem['product']['price'];
+                $tmp['product']['image'] = $orderItem['product']['image'];
+
+                array_push($items, $tmp);
+            }
+            $res['order_items'] = $items;
             return $res;
         }else{
             return response()->json(['error' => 'Unable to create order!'], 412);
@@ -44,7 +63,7 @@ class OrderController extends Controller
     }
 
     public function getOrderItems($orderId){
-        return OrderItem::where('order_id', '=', $orderId)->get();
+        return OrderItem::select('product_id', 'quantity', 'amount')->where(['order_id' => $orderId])->with('product')->get();
     }
 
     /*
@@ -54,10 +73,6 @@ class OrderController extends Controller
      */
     public function addItem($orderId, $productId, $quantity)
     {
-        // $input = $request->all();
-        // $productId = isset($input['product_id']) ? $input['product_id'] : -1;
-        // $quantity = isset($input['quantity']) ? $input['quantity'] : 1;
-
         $order = $this->createOrGetOrder($orderId);
 
         $product = Product::where(['id' => $productId])->first();
@@ -80,7 +95,8 @@ class OrderController extends Controller
      */
     public function getOrder(Request $request, $id)
     {
-        $order = Order::where(['order_id' => $id])->first();
+        $userId = auth('api')->user()->id;
+        $order = Order::where(['order_id' => $id])->where('user_id', '=', $userId)->first();
 
         if (!$order) {
             return Response::json($this->getErrorResponse('Order not found'), 404);
@@ -113,7 +129,7 @@ class OrderController extends Controller
         $input = $request->all();
 
         $orderId = $input['ORDER_ID'];
-        $merchantMid = $input['MID'];
+        $merchantMid = Config::get('services.paytm-wallet.merchant_id');
         $merchantKey = Config::get('services.paytm-wallet.merchant_key');
 
         $paytmParams["MID"] = $merchantMid;
@@ -201,7 +217,7 @@ class OrderController extends Controller
     private function getErrorResponse($message)
     {
         $error = [];
-        $error['message'] = $message;
+        $error['error'] = $message;
         return $error;
     }
 
