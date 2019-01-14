@@ -23,15 +23,28 @@ class OrderController extends Controller
         $bodyContent = json_decode($request->getContent());
 
         $orderItemsArray = $bodyContent->orderItems;
-        $orderId = $bodyContent->orderId;
 
-        foreach ($orderItemsArray as $orderItem) {
-            $this->addItem($orderId, $orderItem->productId, $orderItem->quantity);
+        $order = $this->createOrGetOrder();
+        if($order){
+            foreach ($orderItemsArray as $orderItem) {
+                $this->addItem($order->order_id, $orderItem->productId, $orderItem->quantity);
+            }
+
+            $orderItems = $this->getOrderItems($order->order_id);
+            $res = array();
+            $res['order_id'] = $order->order_id;
+            $res['status'] = $order->status;
+            $res['order_items'] = $orderItems;
+            return $res;
+        }else{
+            return response()->json(['error' => 'Unable to create order!'], 412);
         }
+        
+        
+    }
 
-        $order = $this->createOrGetOrder($orderId);
-
-        echo json_encode($order);
+    public function getOrderItems($orderId){
+        return OrderItem::where('order_id', '=', $orderId)->get();
     }
 
     /*
@@ -59,8 +72,7 @@ class OrderController extends Controller
         $orderItem->quantity = $quantity;
         $orderItem->amount = $amount;
         $orderItem->save();
-
-        return $order;
+        return $orderItem;
     }
 
     /*
@@ -170,16 +182,12 @@ class OrderController extends Controller
         return $verifyChecksum;
     }*/
 
-    private function createOrGetOrder($orderId)
+    private function createOrGetOrder()
     {
-        $order = Order::where('order_id', '=', $orderId)->where('status', '=', 'NEW')->first();
-
-        // Order::where('order_id', $orderId)->where('status', 'NEW')->first();
-
-        // echo 'Order: ' + dd($order);
-
+        $userId = auth('api')->user()->id;
+        $order = Order::where('user_id', '=', $userId)->where('status', '=', 'NEW')->first();
         if (!$order) {
-            $order = Order::create(['status' => 'NEW', 'user_id' => 1, 'order_id' => $orderId]);
+            $order = Order::create(['status' => 'NEW', 'user_id' => $userId, 'order_id' => $orderId]);
             $order->save();
         }
         return $order;
