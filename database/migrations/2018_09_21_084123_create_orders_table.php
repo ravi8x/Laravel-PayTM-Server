@@ -15,10 +15,11 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('order_id');
+            $table->string('order_id')->unique();
             $table->integer('user_id');
-            $table->float('amount');
-            $table->string('status');
+            $table->float('amount')->default(0);
+            // TODO - keep proper order status
+            $table->enum('status', ['NEW', 'PROCESSING', 'CANCEL', 'COMPLETE']);
             $table->timestamps();
         });
     }

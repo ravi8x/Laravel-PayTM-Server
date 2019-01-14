@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Config;
 
 class AppController extends Controller
 {
+	public function registerUser(Request $request){
+		
+	}
     public function getAppConfig(Request $request){
         $config = array();
         $config['merchant_id'] = Config::get('services.paytm-wallet.merchant_id');

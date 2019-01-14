@@ -18,7 +18,7 @@ class CreateTransactionsTable extends Migration
             $table->increments('id');
             $table->string('transaction_id');
             $table->string('status');
-            $table->string('raw_data');
+            $table->text('raw_data');
             $table->timestamps();
         });
     }

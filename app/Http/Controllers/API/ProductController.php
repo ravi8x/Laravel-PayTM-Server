@@ -9,6 +9,6 @@ use App\Http\Controllers\Controller;
 class ProductController extends Controller
 {
     public function getProducts(Request $request){
-        return Product::all();
+        return Product::select('id', 'name', 'image', 'price')->get();
     }
 }

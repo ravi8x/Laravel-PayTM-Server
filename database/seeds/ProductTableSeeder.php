@@ -22,6 +22,5 @@ class ProductTableSeeder extends Seeder
         for ($i = 0; $i < count($products); $i++) {
             DB::table('products')->insert($products[$i]);
         }
-
     }
 }

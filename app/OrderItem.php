@@ -12,4 +12,8 @@ class OrderItem extends Model
     {
         return $this->belongsTo('App\Order');
     }
+
+    public function product(){
+        return $this->hasOne('App\Product', 'id', 'product_id');
+    }
 }

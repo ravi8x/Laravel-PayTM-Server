@@ -10,6 +10,6 @@ class TransactionController extends Controller
 {
     public function getTransactions(Request $request)
     {
-        return Transaction::all();
+        return Transaction::with('order')->get();
     }
 }
