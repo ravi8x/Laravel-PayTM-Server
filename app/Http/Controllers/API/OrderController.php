@@ -32,14 +32,15 @@ class OrderController extends Controller
         $order = $this->createOrGetOrder();
         if($order){
             foreach ($orderItemsArray as $orderItem) {
-                $this->addItem($order->order_id, $orderItem->productId, $orderItem->quantity);
+                $this->addItem($order, $orderItem->productId, $orderItem->quantity);
             }
 
-            $orderItems = $this->getOrderItems($order->order_id);
+            $orderItems = $this->getOrderItems($order->id);
             $res = array();
-            $res['order_id'] = $order->order_id;
+            $res['id'] = $order->id;
+            $res['order_gateway_id'] = $order->order_gateway_id;
             $res['status'] = $order->status;
-            $res['amount'] = $this->getOrderTotal($order->order_id);
+            $res['amount'] = $this->getOrderTotal($order->id);
 
             $items = [];
             foreach ($orderItems as $orderItem) {
@@ -71,10 +72,8 @@ class OrderController extends Controller
      * Creates or fetches order
      * Insert the product in OrderItems table
      */
-    public function addItem($orderId, $productId, $quantity)
+    public function addItem($order, $productId, $quantity)
     {
-        $order = $this->createOrGetOrder($orderId);
-
         $product = Product::where(['id' => $productId])->first();
 
         if (!$product) {
@@ -83,7 +82,7 @@ class OrderController extends Controller
 
         $amount = $product->price * $quantity;
 
-        $orderItem = OrderItem::firstOrNew(array('order_id' => $order['order_id'], 'product_id' => $productId));
+        $orderItem = OrderItem::firstOrNew(array('order_id' => $order['id'], 'product_id' => $productId));
         $orderItem->quantity = $quantity;
         $orderItem->amount = $amount;
         $orderItem->save();
@@ -96,7 +95,7 @@ class OrderController extends Controller
     public function getOrder(Request $request, $id)
     {
         $userId = auth('api')->user()->id;
-        $order = Order::where(['order_id' => $id])->where('user_id', '=', $userId)->first();
+        $order = Order::where(['id' => $id])->where('user_id', '=', $userId)->first();
 
         if (!$order) {
             return Response::json($this->getErrorResponse('Order not found'), 404);
@@ -127,8 +126,14 @@ class OrderController extends Controller
     public function checkTransactionStatus(Request $request)
     {
         $input = $request->all();
+        $userId = auth('api')->user()->id;
+        $orderId = $input['order_gateway_id'];
+        $order = Order::where(['order_gateway_id' => $orderId])->where('user_id', '=', $userId)->first();
+        if(!$order){
+            // Order not found
+            return Response::json($this->getErrorResponse('Order not found'), 404);
+        }
 
-        $orderId = $input['ORDER_ID'];
         $merchantMid = Config::get('services.paytm-wallet.merchant_id');
         $merchantKey = Config::get('services.paytm-wallet.merchant_key');
 
@@ -139,6 +144,7 @@ class OrderController extends Controller
         $postData = "JsonData=" . json_encode($paytmParams, JSON_UNESCAPED_SLASHES);
         $connection = curl_init(); // initiate curl
         // $transactionURL = "https://securegw.paytm.in/merchant-status/getTxnStatus"; // for production
+        // TODO - configure this url b/w staging and production
         $transactionURL = "https://securegw-stage.paytm.in/merchant-status/getTxnStatus";
         curl_setopt($connection, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($connection, CURLOPT_SSL_VERIFYPEER, 0);
@@ -150,17 +156,24 @@ class OrderController extends Controller
         $responseReader = curl_exec($connection);
         $responseData = json_decode($responseReader, true);
 
-        $order = Order::where(['id' => $orderId])->first();
+        
+
         if($order){
-            $order->status = $responseData['STATUS'];
+            $order->status = $this->getPaymentStatus($responseData['STATUS']);
             $order->save();
         }
 
         // inserting transaction
-        $transaction = Transaction::create(['status' => $responseData['STATUS'], 'order_id' => $orderId, 'transaction_id' => Uuid::generate()->string, 'raw_data' => $responseReader]);
+        $transaction = Transaction::create(['status' => $responseData['STATUS'], 'order_id' => $order->id, 'transaction_id' => Uuid::generate()->string, 'raw_data' => $responseReader]);
         $transaction->save();
 
-        echo json_encode($responseData);
+        $order['amount'] = $this->getOrderTotal($order->id);
+        return $order;
+    }
+
+    private function getPaymentStatus($status){
+        $statusList = array('TXN_SUCCESS' => 'COMPLETED', 'TXN_FAILURE' => 'FAILED', 'PENDING' => 'PROCESSING');
+        return $statusList[$status];
     }
 
     /* Generates checksum using request params
@@ -203,10 +216,11 @@ class OrderController extends Controller
         $userId = auth('api')->user()->id;
         $order = Order::where('user_id', '=', $userId)->where('status', '=', 'NEW')->first();
         if (!$order) {
-            $order = Order::create(['status' => 'NEW', 'user_id' => $userId, 'order_id' => $orderId]);
-            $order->save();
+            $order = Order::create(['status' => 'NEW', 'user_id' => $userId, 'order_gateway_id' => Uuid::generate()->string]);
         }
-        return $order;
+        $order->order_gateway_id = Uuid::generate()->string;
+        if($order->save())
+            return $order;
     }
 
     private function getOrderTotal($orderId)
