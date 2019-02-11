@@ -157,14 +157,14 @@ class OrderController extends Controller
         $responseData = json_decode($responseReader, true);
 
         
-
+        $status = $this->getPaymentStatus($responseData['STATUS']);
         if($order){
-            $order->status = $this->getPaymentStatus($responseData['STATUS']);
+            $order->status = $status;
             $order->save();
         }
 
         // inserting transaction
-        $transaction = Transaction::create(['status' => $responseData['STATUS'], 'order_id' => $order->id, 'transaction_id' => Uuid::generate()->string, 'raw_data' => $responseReader]);
+        $transaction = Transaction::create(['status' => $status, 'order_id' => $order->id, 'transaction_id' => Uuid::generate()->string, 'raw_data' => $responseReader]);
         $transaction->save();
 
         $order['amount'] = $this->getOrderTotal($order->id);
