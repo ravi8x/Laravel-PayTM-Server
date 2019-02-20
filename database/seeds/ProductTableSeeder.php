@@ -18,7 +18,7 @@ class ProductTableSeeder extends Seeder
         $products[3] = ['name' => 'Women Black & Lavender Checked Shirt Dress', 'image' => 'https://api.androidhive.info/images/paytm/4.jpg', 'price' => '900'];
         $products[4] = ['name' => 'Black Solid Suede Shoulder Bag', 'image' => 'https://api.androidhive.info/images/paytm/5.jpg', 'price' => '1200'];
         $products[5] = ['name' => 'Mast & Harbour Women Black Solid Pumps', 'image' => 'https://api.androidhive.info/images/paytm/6.jpg', 'price' => '1099'];
-        $products[6] = ['name' => 'White Set of 5 Fibre 16'' x 16'' Cushions', 'image' => 'https://api.androidhive.info/images/paytm/7.jpg', 'price' => '599'];
+        $products[6] = ['name' => 'White Set of 5 Fibre 16\' x 16\' Cushions', 'image' => 'https://api.androidhive.info/images/paytm/7.jpg', 'price' => '599'];
         $products[7] = ['name' => 'Brown Wood Basic Wall Shelf', 'image' => 'https://api.androidhive.info/images/paytm/8.jpg', 'price' => '299'];
 
         for ($i = 0; $i < count($products); $i++) {
