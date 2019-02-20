@@ -17,7 +17,7 @@ class ProductTableSeeder extends Seeder
         $products[2] = ['name' => 'Vishudh Women Peach-Coloured Printed Maxi Dress', 'image' => 'https://api.androidhive.info/images/paytm/3.jpg', 'price' => '620'];
         $products[3] = ['name' => 'Women Black & Lavender Checked Shirt Dress', 'image' => 'https://api.androidhive.info/images/paytm/4.jpg', 'price' => '900'];
         $products[4] = ['name' => 'Black Solid Suede Shoulder Bag', 'image' => 'https://api.androidhive.info/images/paytm/5.jpg', 'price' => '1200'];
-        $products[5] = ['name' => 'Fossil FS4552 MACHINE Watch', 'image' => 'https://api.androidhive.info/images/paytm/6.jpg', 'price' => '7400'];
+        $products[5] = ['name' => 'Mast & Harbour Women Black Solid Pumps', 'image' => 'https://api.androidhive.info/images/paytm/6.jpg', 'price' => '7400'];
 
         for ($i = 0; $i < count($products); $i++) {
             DB::table('products')->insert($products[$i]);
