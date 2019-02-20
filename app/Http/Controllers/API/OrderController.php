@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App;
 use App\Order;
 use App\OrderItem;
 use App\Product;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\DB;
 use Webpatser\Uuid\Uuid;
 
 // TODO - avoid require and make it autoload
@@ -31,16 +33,23 @@ class OrderController extends Controller
 
         $order = $this->createOrGetOrder();
         if($order){
+            // clearing previously stored order items
+            $this->clearOrderItems($order->id);
             foreach ($orderItemsArray as $orderItem) {
-                $this->addItem($order, $orderItem->productId, $orderItem->quantity);
+                $this->addItem($order, $orderItem->product_id, $orderItem->quantity);
             }
 
             $orderItems = $this->getOrderItems($order->id);
+            $amount = $this->getOrderTotal($order->id);
             $res = array();
             $res['id'] = $order->id;
             $res['order_gateway_id'] = $order->order_gateway_id;
             $res['status'] = $order->status;
-            $res['amount'] = $this->getOrderTotal($order->id);
+            $res['amount'] = $amount;
+
+            // save order amount in db
+            $order->amount = $amount;
+            $order->save();
 
             $items = [];
             foreach ($orderItems as $orderItem) {
@@ -65,6 +74,10 @@ class OrderController extends Controller
 
     public function getOrderItems($orderId){
         return OrderItem::select('product_id', 'quantity', 'amount')->where(['order_id' => $orderId])->with('product')->get();
+    }
+
+    public function clearOrderItems($orderId){
+        $orderItems = OrderItem::where(array('order_id' => $orderId))->delete();
     }
 
     /*
@@ -142,10 +155,13 @@ class OrderController extends Controller
         $paytmChecksum = getChecksumFromArray($paytmParams, $merchantKey);
         $paytmParams['CHECKSUMHASH'] = urlencode($paytmChecksum);
         $postData = "JsonData=" . json_encode($paytmParams, JSON_UNESCAPED_SLASHES);
-        $connection = curl_init(); // initiate curl
-        // $transactionURL = "https://securegw.paytm.in/merchant-status/getTxnStatus"; // for production
-        // TODO - configure this url b/w staging and production
-        $transactionURL = "https://securegw-stage.paytm.in/merchant-status/getTxnStatus";
+        $connection = curl_init();
+        $transactionURL = "";
+        if(App::isLocal()){
+            $transactionURL = "https://securegw-stage.paytm.in/merchant-status/getTxnStatus";
+        }else{
+            $transactionURL = "https://securegw.paytm.in/merchant-status/getTxnStatus";
+        }
         curl_setopt($connection, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($connection, CURLOPT_SSL_VERIFYPEER, 0);
         curl_setopt($connection, CURLOPT_URL, $transactionURL);

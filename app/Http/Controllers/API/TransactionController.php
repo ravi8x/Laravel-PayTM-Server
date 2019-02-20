@@ -17,17 +17,29 @@ class TransactionController extends Controller
 		{
 		    $q->where('user_id','=', $userId);
 
-		})->get();
+		})->orderBy('id', 'DESC')->get();
 
+        // TODO - optimize the below JSON preparation
         foreach ($transactions as $transaction) {
             $tmp = [];
-            $tmp['id'] = $transaction['transaction_id'];
+            $tmp['transaction_id'] = $transaction['transaction_id'];
             $tmp['status'] = $transaction['status'];
             $tmp['order_id'] = $transaction['order_id'];
             $tmp['created_at'] = $transaction['created_at']->toDateTimeString();
-            $transaction->order->orderItems;
             $tmp['order'] = $transaction->order;
-            // $tmp['order_items'] = $transaction->order->orderItems;
+            $orderItems = $transaction->order->orderItems;
+
+            foreach ($orderItems as $orderItem) {
+                $items = [];
+                $items['quantity'] = $orderItem['quantity'];
+                $items['amount'] = $orderItem['amount'];
+                $items['product']['id'] = $orderItem['product']['id'];
+                $items['product']['name'] = $orderItem['product']['name'];
+                $items['product']['price'] = $orderItem['product']['price'];
+                $items['product']['image'] = $orderItem['product']['image'];
+
+                $tmp['order_items'] = $items;
+            }
 
             array_push($response, $tmp);
         }
