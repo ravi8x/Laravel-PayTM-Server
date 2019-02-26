@@ -2,9 +2,8 @@ Laravel PayTM Backend - REST API
 ===================
 Larvel e-commerce project including PayTM payement gateway solution.
 
-Android Demo App
-===============
-You can refer [Mart 9](https://github.com/ravi8x/Android-PayTM) e-commerce app that uses this project as backend.
+## Android Demo App
+Refer [Mart 9](https://github.com/ravi8x/Android-PayTM) e-commerce that was built using the REST API provided in this project.
 
 ![Android Ecommerce PayTM integration](https://www.androidhive.info/wp-content/uploads/2019/02/android-e-commerce-app-paytm-integration.png)
 
